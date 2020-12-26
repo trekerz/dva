@@ -1,53 +1,13 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine. See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
-executors:
-  node:
-    docker:
-      - image: circleci/node:10.13-browsers
-    working_directory: ~/dva
-
-environment:
-  NODE_ENV: test
-  NODE_OPTIONS: --max_old_space_size=4096
-  NPM_CONFIG_LOGLEVEL: error
-  JOBS: max # https://gist.github.com/ralphtheninja/f7c45bdee00784b41fed
-
-jobs:
-  yarn_build:
-    executor: node
-    steps:
-      - checkout
-      - run: yarn install
-      - run: yarn bootstrap
-      - run: yarn build
-      - run:
-          command: yarn test -- --forceExit --detectOpenHandles --runInBand --maxWorkers=2
-          no_output_timeout: 300m
-      - run: bash <(curl -s https://codecov.io/bash)
-  cnpm_build:
-    executor: node
-    steps:
-      - checkout
-      - run: sudo npm install -g cnpm
-      - run: cnpm install --registry=https://registry.npmjs.org
-      - run: cnpm run bootstrap -- --npm-client=cnpm
-      - run: cnpm run build
-      - run:
-          command: npm run test -- --forceExit --detectOpenHandles --runInBand --maxWorkers=2
-          no_output_timeout: 300m
-      - run: bash <(curl -s https://codecov.io/bash)
+# Use a package of configuration called an orb.
+orbs:
+  # Declare a dependency on the welcome-orb
+  welcome: circleci/welcome-orb@0.4.1
+# Orchestrate or schedule a set of jobs
 workflows:
-  version: 2
-  build-test:
+  # Name the workflow "welcome"
+  welcome:
+    # Run the welcome/run job in its own container
     jobs:
-      - yarn_build:
-          filters:
-            branches:
-              ignore:
-                - gh-pages
-                - /release\/.*/
-      - cnpm_build:
-          filters:
-            branches:
-              ignore:
-                - gh-pages
-                - /release\/.*/
+      - welcome/run
